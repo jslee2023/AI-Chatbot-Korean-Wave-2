@@ -11,7 +11,9 @@ const getAiClient = (): GoogleGenAI | null => {
   // If the client is already initialized, return it.
   if (ai) return ai;
   
-  // FIX: Adhere to Gemini API guidelines by using process.env.API_KEY. This resolves the TypeScript error.
+  // FIX: Adhere to Gemini API guidelines by using process.env.API_KEY.
+  // This is made possible by the define config in vite.config.ts.
+  // This also resolves the TypeScript error: "Property 'env' does not exist on type 'ImportMeta'".
   const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
@@ -22,9 +24,11 @@ const getAiClient = (): GoogleGenAI | null => {
   }
 
   try {
+    // Per guideline, apiKey must be passed in an object.
     ai = new GoogleGenAI({ apiKey });
     return ai;
-  } catch (error) {
+  } catch (error)
+  {
     console.error("Failed to initialize GoogleGenAI:", error);
     apiKeyIsMissing = true;
     return null;
