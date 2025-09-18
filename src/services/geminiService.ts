@@ -48,7 +48,7 @@ export const initChat = (): Chat | null => {
       },
     });
   } catch (error) {
-     console.error("Failed to create chat:", error);
+     console.error("Failed to create chat:", error); 
      return null;
   }
 };
