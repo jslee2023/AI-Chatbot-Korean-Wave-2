@@ -25,7 +25,7 @@ const ChatInterface: React.FC = () => {
         },
       ]);
     } else {
-      // FIX: Update error message to reference API_KEY as per guidelines.
+      // FIX: Update error message to reflect the correct environment variable name.
       const apiKeyError = "Google Gemini API 키가 설정되지 않았습니다. 이 앱을 사용하려면 관리자가 `API_KEY` 환경 변수를 설정해야 합니다.";
       setMessages([
         {
