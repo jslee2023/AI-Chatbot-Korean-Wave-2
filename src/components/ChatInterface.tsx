@@ -64,8 +64,8 @@ const ChatInterface: React.FC = () => {
           )
         );
       }
-    } catch (e: any) {
-      const errorMessage = e.message || 'An unexpected error occurred.';
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message || 'An unexpected error occurred.';
       setError(errorMessage);
       setMessages((prev) =>
         prev.map((msg) =>
