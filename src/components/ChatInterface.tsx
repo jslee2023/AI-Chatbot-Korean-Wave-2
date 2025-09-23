@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Chat } from '@google/genai';
 import { initChat, sendMessageStream } from '../services/geminiService';
 import type { ChatMessage } from '../types';
@@ -15,6 +15,7 @@ const ChatInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 초기화
   useEffect(() => {
     const chatInstance = initChat();
     if (chatInstance) {
@@ -35,12 +36,13 @@ const ChatInterface: React.FC = () => {
           sender: Sender.Bot,
           text: `**초기화 오류:**\n${apiKeyError}`,
           // timestamp: new Date().toISOString(),
-        }
+        },
       ]);
       setError(apiKeyError);
     }
   }, []);
 
+  // 전송
   const handleSendMessage = useCallback(async (text: string) => {
     if (!chat || isLoading) return;
 
@@ -56,9 +58,12 @@ const ChatInterface: React.FC = () => {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setError(null);
-    
+
     const botMessageId = (Date.now() + 1).toString();
-    setMessages((prev) => [...prev, { id: botMessageId, sender: Sender.Bot, text: '' /*, timestamp: new Date().toISOString()*/ }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: botMessageId, sender: Sender.Bot, text: '' /*, timestamp: new Date().toISOString()*/ },
+    ]);
 
     try {
       const stream = await sendMessageStream(chat, trimmed);
@@ -67,52 +72,55 @@ const ChatInterface: React.FC = () => {
         if (chunk?.text) {
           fullText += chunk.text;
           setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === botMessageId ? { ...msg, text: fullText } : msg
-            )
+            prev.map((msg) => (msg.id === botMessageId ? { ...msg, text: fullText } : msg))
           );
         }
       }
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error ? (e.message || 'An unexpected error occurred.') : 'An unexpected error occurred.';
+        e instanceof Error ? e.message || 'An unexpected error occurred.' : 'An unexpected error occurred.';
       setError(errorMessage);
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === botMessageId ? { ...msg, text: `오류: ${errorMessage}` } : msg
-        )
+        prev.map((msg) => (msg.id === botMessageId ? { ...msg, text: `오류: ${errorMessage}` } : msg))
       );
     } finally {
       setIsLoading(false);
     }
   }, [chat, isLoading]);
 
+  // 입력창 placeholder 메모
+  const placeholder = useMemo(() => {
+    if (!chat) return '채팅을 초기화 중입니다...';
+    if (isLoading) return '응답을 기다리는 중...';
+    return '한류에 대해 궁금한 점을 물어보세요...';
+  }, [chat, isLoading]);
+
   return (
     <div className="flex flex-col flex-grow h-full overflow-hidden">
+      {/* 메시지 리스트 */}
       <MessageList messages={messages} />
 
+      {/* 로딩 인디케이터 */}
       {isLoading && (
         <div className="flex justify-center p-4">
           <LoadingIndicator />
         </div>
       )}
 
+      {/* 에러 배너 */}
       {error && (
         <div className="px-4 py-2 text-red-400 text-sm bg-red-900/50" role="alert" aria-live="polite">
-          <p><strong>오류:</strong> {error}</p>
+          <p>
+            <strong>오류:</strong> {error}
+          </p>
         </div>
       )}
 
+      {/* 입력창 */}
       <MessageInput
         onSendMessage={handleSendMessage}
         disabled={isLoading || !chat}
-        placeholder={
-          !chat
-            ? '채팅을 초기화 중입니다...'
-            : isLoading
-              ? '응답을 기다리는 중...'
-              : '한류에 대해 궁금한 점을 물어보세요...'
-        }
+        placeholder={placeholder}
         isSending={isLoading}
       />
     </div>
