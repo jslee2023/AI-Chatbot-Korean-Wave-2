@@ -1,13 +1,13 @@
 import React from 'react';
 
 type IconProps = {
-  title?: string;         // 스크린리더용 접근성 제목
-  size?: number | string; // 아이콘 크기
-  color?: string;         // stroke 색상
-  strokeWidth?: number;   // 선 굵기
+  title?: string;
+  size?: number | string;
+  color?: string;
+  strokeWidth?: number;
   className?: string;
-  ariaHidden?: boolean;   // 장식용 여부
-  role?: string;          // 필요 시 role 지정 (예: img)
+  ariaHidden?: boolean;
+  role?: string;
 };
 
 const SvgBase: React.FC<React.PropsWithChildren<IconProps>> = ({
@@ -20,11 +20,10 @@ const SvgBase: React.FC<React.PropsWithChildren<IconProps>> = ({
   role,
   children,
 }) => {
-  const a11yProps =
+  const a11y =
     ariaHidden ?? !title
       ? { 'aria-hidden': true }
       : { role: role ?? 'img', 'aria-label': title };
-
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +36,7 @@ const SvgBase: React.FC<React.PropsWithChildren<IconProps>> = ({
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      {...a11yProps}
+      {...a11y}
     >
       {title ? <title>{title}</title> : null}
       {children}
@@ -45,7 +44,6 @@ const SvgBase: React.FC<React.PropsWithChildren<IconProps>> = ({
   );
 };
 
-// 전송 아이콘
 export const SendIcon: React.FC<IconProps> = React.memo((props) => (
   <SvgBase {...props}>
     <path d="M22 2 11 13" />
@@ -54,7 +52,6 @@ export const SendIcon: React.FC<IconProps> = React.memo((props) => (
 ));
 SendIcon.displayName = 'SendIcon';
 
-// 사용자 아이콘
 export const UserIcon: React.FC<IconProps> = React.memo((props) => (
   <SvgBase {...props}>
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -63,7 +60,6 @@ export const UserIcon: React.FC<IconProps> = React.memo((props) => (
 ));
 UserIcon.displayName = 'UserIcon';
 
-// 봇 아이콘
 export const BotIcon: React.FC<IconProps> = React.memo((props) => (
   <SvgBase {...props}>
     <rect x="3" y="11" width="18" height="10" rx="2" />
