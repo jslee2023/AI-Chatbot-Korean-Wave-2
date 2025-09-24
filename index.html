@@ -5,20 +5,23 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hallyu AI Chatbot</title>
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "vite": "https://aistudiocdn.com/vite@^7.1.6",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.3"
-  }
-}
-</script>
-</head>
+    <!-- importmap 스크립트는 <head> 태그 내에 위치하는 것이 좋습니다. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://aistudiocdn.com/react@^19.1.1",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+          "react/": "https://aistudiocdn.com/react@^19.1.1/",
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+          "vite": "https://aistudiocdn.com/vite@^7.1.6",
+          "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.3"
+        }
+      }
+    </script>
+  </head>
   <body>
     <div id="root"></div>
+    <!-- 모듈 스크립트는 일반적으로 <body> 태그의 끝에 위치시켜 DOM 로딩 후 실행되도록 합니다. -->
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
