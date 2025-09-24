@@ -109,7 +109,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   }, [submit]);
 
   return (
-    <div className="p-4 border-t border-gray-500 bg-gray-900/50 rounded-b-2xl">
+    <div className="p-4 border-t border-gray-500 bg-gray-700/50 rounded-b-2xl">
       <form ref={formRef} onSubmit={handleSubmit} className="flex items-end gap-3">
         {/* 보조기술용 라벨(시각적으로 숨김) */}
         <label id={labelId} htmlFor="chat-input" className="sr-only">
