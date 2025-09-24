@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = React.memo(({
               aria-hidden="true"
               className={[
                 'w-3.5 h-3.5 rounded-full',
-                'bg-gradient-to-r from-teal-300 to-cyan-400', // 💡 아이콘 그라데이션 색상 변경 (원래: from-pink-500 to-purple-500)
+                'bg-gradient-to-r from-teal-200 to-cyan-300', // 💡 아이콘 그라데이션 색상 변경 (원래: from-pink-500 to-purple-500)
                 logoPulse ? 'animate-pulse' : '',
                 'ring-2 ring-white/60 dark:ring-gray-900/60'
               ].join(' ')}
