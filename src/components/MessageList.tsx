@@ -23,7 +23,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     <div
       role="log"
       aria-live="polite"
-      className="flex-1 overflow-y-auto max-h-[70vh] p-4 bg-blue-500 shadow-inner space-y-3"
+      className="flex-1 overflow-y-auto max-h-[70vh] p-4 bg-green-500 shadow-inner space-y-3"
     >
       {messages.map((m) => (
         <Message key={m.id} message={m} />
