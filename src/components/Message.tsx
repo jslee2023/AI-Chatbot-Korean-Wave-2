@@ -1,161 +1,100 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import type { ChatMessage } from '../types';
 import { Sender } from '../types';
 import { BotIcon, UserIcon } from './IconComponents';
 
 interface MessageProps {
   message: ChatMessage;
-  maxWidthClass?: string;   // 말풍선 최대폭 커스터마이즈
-  showAvatar?: boolean;     // 아바타 노출 여부
-  enableMarkdown?: boolean; // 마크다운 렌더 활성화
 }
 
-/* 1) 최소 XSS 방지: 기본 이스케이프 후 간단 마크다운 파싱 */
-const toHtml = (raw: string) => {
-  let text = raw;
-
-  // 기본 이스케이프
-  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  // 인라인 코드 `code`
-  text = text.replace(/`([^`]+?)`/g, '<code>$1</code>');
-
-  // 링크 [text](url)
-  text = text.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline decoration-dotted">$1</a>'
+/**
+ * 줄바꿈 처리: 문자열을 \n 기준으로 분할하여 <br />로 연결
+ */
+function splitByNewline(text: string): (string | JSX.Element)[] {
+  const parts = text.split('\n');
+  return parts.flatMap((part, idx) =>
+    idx === 0 ? [part] : [<br key={`br-${idx}`} />, part]
   );
-
-  // 굵게 **bold**
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-  // 줄바꿈
-  text = text.replace(/\n/g, '<br />');
-
-  return text;
-};
-
-/* 2) dompurify 동적 로딩 + 폴백 sanitizer
-   - dompurify 설치 전에도 빌드 실패가 없도록 구성
-   - 설치 후에는 자동으로 dompurify를 사용 */
-type SanitizeFn = (html: string) => string;
-
-let cachedSanitize: SanitizeFn | null = null;
-
-const basicFallbackSanitize: SanitizeFn = (html) => {
-  // script/style 태그 제거
-  html = html.replace(/<\s*(script|style)[^>]*>.*?<\s*\/\s*\1\s*>/gis, '');
-  // on* 이벤트 속성 제거
-  html = html.replace(/\son\w+=(?:"[^"]*"|'[^']*')/gi, '');
-  // javascript: 제거
-  html = html.replace(/\s(href|src)\s*=\s*["']\s*javascript:[^"']*["']/gi, '$1="#"');
-  return html;
-};
-
-async function ensureSanitizer(): Promise<SanitizeFn> {
-  if (cachedSanitize) return cachedSanitize;
-
-  if (typeof window !== 'undefined') {
-    try {
-      // dompurify가 설치되어 있으면 로드
-      const mod = await import('dompurify');
-      cachedSanitize = (html: string) =>
-        mod.default.sanitize(html, {
-          USE_PROFILES: { html: true },
-          ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-        });
-      return cachedSanitize;
-    } catch {
-      // 설치 안 되어 있으면 폴백 사용
-      cachedSanitize = basicFallbackSanitize;
-      return cachedSanitize;
-    }
-  }
-
-  // SSR 등 윈도우 없는 환경: 최소 폴백
-  cachedSanitize = (html: string) => html;
-  return cachedSanitize;
 }
 
-/* 3) 프레젠테이션 컴포넌트들 */
-const MessageBubble: React.FC<
-  React.PropsWithChildren<{ isUser: boolean; maxWidthClass?: string }>
-> = ({ isUser, maxWidthClass = 'max-w-md md:max-w-lg', children }) => {
-  const base =
-    'p-3 rounded-xl shadow-md break-words [overflow-wrap:anywhere] prose prose-invert prose-sm max-w-none';
-  const bg = isUser ? 'bg-blue-600/80 rounded-br-none' : 'bg-gray-700/80 rounded-bl-none';
-  return <div className={`${base} ${bg} ${maxWidthClass}`}>{children}</div>;
-};
-
-const Avatar: React.FC<{ isUser: boolean }> = ({ isUser }) => {
-  const base = 'flex-shrink-0 w-8 h-8 flex items-center justify-center shadow-md rounded-full';
-  return isUser ? (
-    <div className={`${base} bg-gray-600`} aria-hidden="true">
-      <UserIcon ariaHidden />
-    </div>
-  ) : (
-    <div className={`${base} bg-gradient-to-br from-purple-500 to-pink-500`} aria-hidden="true">
-      <BotIcon ariaHidden />
-    </div>
-  );
-};
-
-/* 4) 안전 렌더러 */
-const SafeContent: React.FC<{ text: string; enableMarkdown: boolean }> = ({
-  text,
-  enableMarkdown,
-}) => {
-  // enableMarkdown=false면 plain text로 렌더
-  const [html, setHtml] = useState<string>('');
-  const rawHtml = useMemo(() => (enableMarkdown ? toHtml(text) : ''), [text, enableMarkdown]);
-
-  useEffect(() => {
-    let mounted = true;
-    if (!enableMarkdown) {
-      setHtml('');
+/**
+ * 굵게 마크다운 처리: **bold** 구문만 지원
+ * - 정규식으로 토큰화 후 React 요소로 안전하게 렌더링
+ * - HTML을 삽입하지 않기 때문에 XSS 위험을 크게 줄임
+ */
+function inlineBold(nodes: (string | JSX.Element)[]): (string | JSX.Element)[] {
+  const result: (string | JSX.Element)[] = [];
+  nodes.forEach((node, i) => {
+    if (typeof node !== 'string') {
+      result.push(node);
       return;
     }
-    (async () => {
-      const sanitize = await ensureSanitizer();
-      const safe = sanitize(rawHtml);
-      if (mounted) setHtml(safe);
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [rawHtml, enableMarkdown]);
+    // **...** 패턴을 찾음
+    const regex = /\*\*(.+?)\*\*/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
 
-  if (!enableMarkdown) {
-    return (
-      <p className="m-0 whitespace-pre-wrap" dir="auto">
-        {text}
-      </p>
-    );
-  }
+    while ((match = regex.exec(node)) !== null) {
+      const [full, inside] = match;
+      const start = match.index;
 
-  return <div className="m-0" dir="auto" dangerouslySetInnerHTML={{ __html: html }} />;
+      if (start > lastIndex) {
+        result.push(node.slice(lastIndex, start));
+      }
+      result.push(<strong key={`b-${i}-${start}`}>{inside}</strong>);
+      lastIndex = start + full.length;
+    }
+    if (lastIndex < node.length) {
+      result.push(node.slice(lastIndex));
+    }
+  });
+  return result;
+}
+
+/**
+ * 텍스트를 안전하게 React 노드로 변환
+ * - 지원: 줄바꿈, 굵게
+ * - 필요 시 인라인 코드, 링크 등 점진 확장 가능
+ */
+function renderSafeText(text: string): React.ReactNode {
+  const withNewlines = splitByNewline(text);
+  const withBold = inlineBold(withNewlines);
+  return withBold;
+}
+
+const Message: React.FC<MessageProps> = ({ message }) => {
+  const isUser = message.sender === Sender.User;
+
+  const messageClasses = isUser
+    ? 'bg-blue-600/80 self-end rounded-br-none'
+    : 'bg-gray-700/80 self-start rounded-bl-none';
+
+  const containerClasses = isUser
+    ? 'flex items-end justify-end gap-2'
+    : 'flex items-end gap-2';
+
+  return (
+    <div className={containerClasses}>
+      {!isUser && (
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md" aria-hidden="true">
+          <BotIcon ariaHidden />
+        </div>
+      )}
+
+      <div className={`max-w-md md:max-w-lg p-3 rounded-xl shadow-md ${messageClasses}`}>
+        {/* prose를 유지하되, dangerouslySetInnerHTML은 사용하지 않습니다 */}
+        <div className="prose prose-invert prose-sm max-w-none">
+          {renderSafeText(message.text)}
+        </div>
+      </div>
+
+      {isUser && (
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center shadow-md" aria-hidden="true">
+          <UserIcon ariaHidden />
+        </div>
+      )}
+    </div>
+  );
 };
 
-/* 5) 메인 컴포넌트 */
-const Message: React.FC<MessageProps> = React.memo(
-  ({ message, maxWidthClass, showAvatar = true, enableMarkdown = true }) => {
-    const isUser = message.sender === Sender.User;
-    const container = isUser ? 'flex items-end justify-end gap-2' : 'flex items-end gap-2';
-    const ariaLabel = isUser ? '사용자 메시지' : '봇 메시지';
-
-    return (
-      <div className={container} role="group" aria-label={ariaLabel}>
-        {!isUser && showAvatar && <Avatar isUser={false} />}
-
-        <MessageBubble isUser={isUser} maxWidthClass={maxWidthClass}>
-          <SafeContent text={message.text} enableMarkdown={enableMarkdown} />
-        </MessageBubble>
-
-        {isUser && showAvatar && <Avatar isUser />}
-      </div>
-    );
-  }
-);
-
-Message.displayName = 'Message';
 export default Message;
