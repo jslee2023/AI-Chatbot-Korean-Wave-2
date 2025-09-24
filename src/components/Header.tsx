@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = React.memo(({
               className={[
                 'text-lg sm:text-xl font-bold',
                 'text-transparent bg-clip-text', // 💡 그라데이션 텍스트 유지
-                'bg-gradient-to-r from-cyan-400 to-blue-500', // 💡 텍스트 그라데이션 색상 변경 (원래: from-purple-500 to-pink-500)
+                'bg-gradient-to-r from-cyan-200 to-blue-300', // 💡 텍스트 그라데이션 색상 변경 (원래: from-purple-500 to-pink-500)
                 'contrast-more:text-blue-600 contrast-more:bg-none' // 💡 고대비 모드 대비 색상도 변경 (원래: text-purple-600)
               ].join(' ')}
             >
