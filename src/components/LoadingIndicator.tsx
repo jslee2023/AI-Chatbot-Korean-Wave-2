@@ -14,8 +14,11 @@ const DOTS = 3;
 const LoadingIndicator: React.FC<LoadingIndicatorProps> = React.memo(({
   label = '응답 생성 중',
   compact = false,
-  bubbleColorClass = 'bg-gray-700/80',
-  dotColorClass = 'bg-gray-300 dark:bg-gray-200',
+  // 💡 수정 지점: 말풍선 배경색을 MessageList의 배경색과 일치시키거나 투명하게 설정합니다.
+  // MessageList의 평상시 배경이 'bg-white dark:bg-gray-900' 이므로, 여기에 맞춰줍니다.
+  bubbleColorClass = 'bg-white dark:bg-gray-900', // 👈 이 부분을 MessageList의 배경색과 동일하게
+  // 만약 말풍선 배경 없이 점만 보이게 하고 싶다면: bubbleColorClass = 'bg-transparent',
+  dotColorClass = 'bg-gray-500 dark:bg-gray-300', // 👈 점 색깔은 조금 더 진하게 (눈에 띄도록) 조정
   iconSize = 18,
 }) => {
   const containerSpace = compact ? 'px-3 py-1.5 gap-1.5' : 'px-4 py-2 gap-2';
@@ -65,10 +68,9 @@ type DancingDotsProps = {
 
 const DancingDots: React.FC<DancingDotsProps> = ({
   count = 3,
-  dotClassName = 'w-2 h-2 bg-gray-300 rounded-full',
+  dotClassName = 'w-2 h-2 bg-gray-500 rounded-full', // 💡 DancingDots 내부의 기본값도 맞춤 (LoadingIndicator에서 prop으로 넘어오므로 실제로는 위에 정의된 dotColorClass가 적용됨)
   gapClassName = 'space-x-1.5',
 }) => {
-  // 모션 감소 환경에서는 애니메이션 제거
   const baseAnim = 'animate-pulse';
   const reducedMotion = 'motion-reduce:animate-none';
 
@@ -79,7 +81,6 @@ const DancingDots: React.FC<DancingDotsProps> = ({
           key={i}
           className={`${dotClassName} ${baseAnim} ${reducedMotion}`}
           style={{
-            // CSS 변수나 tailwind keyframes를 쓰면 더 좋지만, 간단히 지연만 부여
             animationDelay: `${i * 0.18}s`,
           }}
           aria-hidden="true"
