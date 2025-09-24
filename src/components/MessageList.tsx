@@ -19,7 +19,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     // flex-1: 부모 컨테이너(아마 ChatInterface.tsx)의 남은 공간을 채우도록 합니다.
     // overflow-y-auto: 내용이 넘칠 경우 세로 스크롤바를 자동으로 표시합니다.
     // max-h-[70vh]: 메시지 목록의 최대 높이를 화면 높이의 70%로 제한합니다. 필요에 따라 max-h-[400px] 등으로 변경하세요.
-    // p-4, bg-white, shadow-inner: 가독성을 높이기 위한 예시 스타일입니다.
+    // p-4, bg-blue, shadow-inner: 가독성을 높이기 위한 예시 스타일입니다.
     <div
       role="log"
       aria-live="polite"
