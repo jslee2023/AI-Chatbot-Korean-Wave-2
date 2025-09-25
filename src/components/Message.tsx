@@ -83,7 +83,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
 
       <div className={`max-w-md md:max-w-lg p-3 rounded-xl shadow-md ${messageClasses}`}>
         {/* prose를 유지하되, dangerouslySetInnerHTML은 사용하지 않습니다 */}
-        <div className="prose prose-invert prose-sm max-w-none">
+        <div className="prose prose-invert prose-sm max-w-[80%]">
           {renderSafeText(message.text)}
         </div>
       </div>
