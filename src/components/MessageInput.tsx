@@ -1,183 +1,112 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { SendIcon } from './IconComponents';
-
-type SendShortcut = 'enter' | 'mod+enter'; // enter: Enter=전송, Shift+Enter 줄바꿈 / mod+enter: Cmd/Ctrl+Enter 전송
+// src/components/MessageInput.tsx
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 interface MessageInputProps {
-  onSendMessage: (text: string) => void;
-  disabled?: boolean;
-  isSending?: boolean;           // 로딩/전송 중 상태
-  placeholder?: string;
-  autoFocus?: boolean;
-  maxLength?: number;            // 글자 수 제한
-  sendShortcut?: SendShortcut;   // 단축키 정책
-  minRows?: number;
-  maxRows?: number;
-  ariaDescription?: string;      // SR 전용 안내 문구
+  onSendMessage: (text: string) => Promise<void>; // 메시지 전송 함수
+  disabled: boolean; // 입력 비활성화 여부
+  placeholder: string; // placeholder 텍스트
+  isSending: boolean; // 메시지 전송 중 여부 (로딩 상태)
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({
-  onSendMessage,
-  disabled = false,
-  isSending = false,
-  placeholder = '무엇이든 한국에 관해 물어보세요…',
-  autoFocus = false,
-  maxLength = 4000,
-  sendShortcut = 'enter',
-  minRows = 1,
-  maxRows = 6,
-  ariaDescription,
-}) => {
-  const [input, setInput] = useState('');
-  const textRef = useRef<HTMLTextAreaElement | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
-  const labelId = useId();
-  const descId = useId();
+const MessageInput: React.FC<MessageInputProps> = React.memo(
+  ({ onSendMessage, disabled, placeholder, isSending }) => {
+    const [input, setInput] = useState('');
+    const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isDisabled = disabled || isSending;
-  const trimmed = input.trim();
-  const canSend = !!trimmed && !isDisabled;
-
-  // 자동 포커스
-  useEffect(() => {
-    if (autoFocus && textRef.current) textRef.current.focus();
-  }, [autoFocus]);
-
-  // textarea 자동 높이 조절
-  const autoResize = useCallback(() => {
-    const el = textRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    const lineHeight = parseInt(getComputedStyle(el).lineHeight || '20', 10);
-    const maxHeight = lineHeight * maxRows + 8; // 약간의 패딩 여유
-    el.style.height = Math.min(el.scrollHeight, maxHeight) + 'px';
-  }, [maxRows]);
-
-  useEffect(() => {
-    autoResize();
-  }, [input, autoResize]);
-
-  // 입력 변경
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
-    if (val.length <= maxLength) {
-      setInput(val);
-    } else {
-      setInput(val.slice(0, maxLength));
-    }
-  }, [maxLength]);
-
-  // 전송
-  const submit = useCallback(() => {
-    if (!canSend) return;
-    onSendMessage(trimmed);
-    setInput('');
-    // 전송 후 높이 초기화
-    requestAnimationFrame(autoResize);
-  }, [canSend, onSendMessage, trimmed, autoResize]);
-
-  // 단축키 처리
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // 모션 축소 환경에서도 키 이벤트는 동일
-    if (sendShortcut === 'enter') {
-      // Enter = 전송, Shift+Enter = 줄바꿈
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        submit();
+    // 전송 버튼 클릭 또는 Enter 키 입력 시 메시지 전송
+    const handleSend = useCallback(() => {
+      if (input.trim() && !disabled) {
+        onSendMessage(input.trim());
+        setInput(''); // 입력 필드 초기화
       }
-    } else {
-      // mod+enter = 전송 (Mac Cmd, Win/Linux Ctrl)
-      const isMod = e.metaKey || e.ctrlKey;
-      if (e.key === 'Enter' && isMod) {
-        e.preventDefault();
-        submit();
+    }, [input, onSendMessage, disabled]);
+
+    // 텍스트 영역의 높이를 내용에 맞게 자동 조절
+    useEffect(() => {
+      if (textAreaRef.current) {
+        textAreaRef.current.style.height = 'auto'; // 높이 초기화
+        textAreaRef.current.style.height = textAreaRef.current.scrollHeight + 'px'; // 내용에 맞춰 높이 조절
       }
-    }
-  }, [sendShortcut, submit]);
+    }, [input]); // 입력값이 변경될 때마다 실행
 
-  const shortcutHint = useMemo(() => {
-    return sendShortcut === 'enter'
-      ? 'Enter로 전송, Shift+Enter로 줄바꿈'
-      : 'Cmd/Ctrl+Enter로 전송, Enter로 줄바꿈';
-  }, [sendShortcut]);
+    // Enter 키 눌렀을 때 메시지 전송 (Shift + Enter는 줄바꿈)
+    const handleKeyPress = useCallback(
+      (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey && !disabled) {
+          e.preventDefault(); // 기본 Enter 동작(줄바꿈) 방지
+          handleSend();
+        }
+      },
+      [handleSend, disabled]
+    );
 
-  const remaining = maxLength - input.length;
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    submit();
-  }, [submit]);
-
-  return (
-    <div className="p-4 border-t border-gray-500 bg-gray-900/50 rounded-b-2xl">
-      <form ref={formRef} onSubmit={handleSubmit} className="flex items-end gap-3">
-        {/* 보조기술용 라벨(시각적으로 숨김) */}
-        <label id={labelId} htmlFor="chat-input" className="sr-only">
-          메시지 입력
-        </label>
-
-        <div className="flex-1 flex flex-col">
-          <textarea
-            id="chat-input"
-            ref={textRef}
-            value={input}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            rows={minRows}
-            aria-labelledby={labelId}
-            aria-describedby={descId}
-            aria-invalid={false}
-            spellCheck={true}
-            disabled={isDisabled}
-            className={[
-              'flex-grow w-full bg-gray-700 text-white rounded-lg px-3 py-2',
-              'resize-none',
-              'placeholder:text-gray-300/70',
-              'focus:outline-none focus:ring-2 focus:ring-purple-500',
-              'transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
-              'selection:bg-purple-500/30',
-              'break-words [overflow-wrap:anywhere]',
-            ].join(' ')}
-            style={{ maxHeight: '50vh' }}
-          />
-
-          {/* 하단 보조 정보: 단축키 + 글자 수 */}
-          <div id={descId} className="mt-1 flex items-center justify-between text-xs text-gray-300/80">
-            <span>{ariaDescription ?? shortcutHint}</span>
-            <span aria-live="polite">
-              {remaining.toLocaleString()}자 남음
-            </span>
-          </div>
-        </div>
-
+    return (
+      <div className="flex items-center px-4 py-3 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700">
+        <textarea
+          ref={textAreaRef}
+          className="flex-grow resize-none overflow-hidden h-10 min-h-[40px] max-h-[120px] rounded-full px-4 py-2 mr-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder={placeholder}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          disabled={disabled}
+          rows={1} // 초기 높이를 1줄로 설정
+          aria-label="메시지 입력"
+        />
         <button
-          type="submit"
-          disabled={!canSend}
-          className={[
-            'relative bg-gradient-to-br from-purple-500 to-pink-500 text-white p-3 rounded-full',
-            'hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed',
-            'transition-transform transition-opacity duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-pink-500',
-            'motion-reduce:transition-none motion-reduce:hover:opacity-100',
-            canSend ? 'hover:scale-105 active:scale-95' : '',
-          ].join(' ')}
+          onClick={handleSend}
+          disabled={!input.trim() || disabled || isSending}
+          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors duration-200
+          ${
+            !input.trim() || disabled || isSending
+              ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
           aria-label="메시지 전송"
-          aria-live="off"
         >
-          {/* 로딩 스피너(선택): isSending 상태 시 교체 */}
           {isSending ? (
-            <span
-              className="block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin"
-              aria-hidden="true"
-            />
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
           ) : (
-            <SendIcon ariaHidden />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 12h14M12 5l7 7-7 7"
+              />
+            </svg>
           )}
         </button>
-      </form>
-    </div>
-  );
-};
+      </div>
+    );
+  }
+);
+
+MessageInput.displayName = 'MessageInput';
 
 export default MessageInput;
