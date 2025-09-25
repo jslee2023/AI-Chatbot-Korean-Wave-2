@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = React.memo(({
       role="banner"
       className={[
         'w-full',
-        sticky ? 'sticky top-0 z-40' : '',
+       // sticky ? 'sticky top-0 z-40' : '',
         // 💡 배경: 이전보다 더 짙은 고정 배경색으로 변경. (투명도 및 블러 제거)
         'bg-gray-500 dark:bg-gray-950', // 원래: 'bg-white/60 dark:bg-gray-900/50'
         // 💡 상단 모서리 둥글게: App.tsx의 rounded-xl과 동일하게 맞춰 일관성 확보
