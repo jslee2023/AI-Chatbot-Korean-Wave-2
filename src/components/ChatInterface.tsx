@@ -1,7 +1,7 @@
 // src/components/ChatInterface.tsx
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ChatSession } from '@google/generative-ai'; // ChatSession 타입으로 변경 (Chat은 더 추상적)
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { ChatSession, GenerateContentStreamResult } from '@google/generative-ai';
 import { initChat, sendMessageStream } from '../services/geminiService';
 import type { ChatMessage } from '../types';
 import { Sender } from '../types';
@@ -13,40 +13,45 @@ import LoadingIndicator from './LoadingIndicator';
 const API_KEY_ENV_NAME = 'GOOGLE_GEMINI_API_KEY';
 
 const ChatInterface: React.FC = () => {
-  const [chat, setChat] = useState<ChatSession | null>(null); // ChatSession 타입 사용
+  const [chat, setChat] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 💡 챗 세션 초기화 및 초기 메시지 설정 (컴포넌트 마운트 시 한 번 실행)
+  // 💡 useRef를 사용하여 메시지 ID 카운터를 관리합니다.
+  // 이 값은 렌더링에 영향을 주지 않으므로 상태가 될 필요가 없습니다.
+  const messageIdRef = useRef<number>(0);
+
+  // 챗 세션 초기화 및 초기 메시지 설정 (컴포넌트 마운트 시 한 번 실행)
   useEffect(() => {
     const chatInstance = initChat();
     if (chatInstance) {
       setChat(chatInstance);
       setMessages([
         {
-          id: 'init-bot',
+          id: `bot-init-${messageIdRef.current++}`,
           sender: Sender.Bot,
           text: '안녕하세요! 저는 한류 마스터 챗봇입니다. K-pop, 드라마, 영화 등 한국 문화에 대해 무엇이든 물어보세요!',
         },
       ]);
-      setError(null); // 에러 상태 초기화
+      setError(null);
     } else {
       const apiKeyErrorMessage = `Google Gemini API 키가 설정되지 않았습니다. 이 앱을 사용하려면 관리자가 \`${API_KEY_ENV_NAME}\` 환경 변수를 설정해야 합니다.`;
       setMessages([
         {
-          id: 'init-error',
+          id: `bot-error-${messageIdRef.current++}`,
           sender: Sender.Bot,
           text: `**초기화 오류:**\n${apiKeyErrorMessage}`,
         },
       ]);
-      setError(apiKeyErrorMessage); // 에러 메시지 설정
+      setError(apiKeyErrorMessage);
     }
-  }, []); // 빈 배열: 컴포넌트 마운트 시에만 실행
+  }, []);
 
-  // 💡 메시지 전송 핸들러
+  // 메시지 전송 핸들러
   const handleSendMessage = useCallback(async (text: string) => {
-    if (!chat || isLoading) { // 챗 세션이 없거나 이미 로딩 중이면 전송 방지
+    // 챗 세션이 없거나 이미 로딩 중이면 전송 방지
+    if (!chat || isLoading) {
       console.warn("메시지를 보낼 수 없습니다. 챗 세션이 없거나 로딩 중입니다.");
       return;
     }
@@ -56,16 +61,16 @@ const ChatInterface: React.FC = () => {
 
     // 사용자 메시지를 메시지 목록에 추가
     const userMessage: ChatMessage = {
-      id: Date.now().toString(), // 고유 ID 생성
+      id: `user-${messageIdRef.current++}`, // 고유 ID 생성 (useRef 활용)
       sender: Sender.User,
       text: trimmedText,
     };
     setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true); // 로딩 상태 시작
-    setError(null); // 에러 상태 초기화
+    setIsLoading(true);
+    setError(null); // 새로운 요청 전 에러 상태 초기화
 
     // 봇 응답을 위한 빈 메시지 추가 (스트림으로 채워질 예정)
-    const botMessageId = `msg-${messageIdCounter++}`; // 사용자 메시지보다 나중에 추가될 ID
+    const botMessageId = `bot-${messageIdRef.current++}`;
     setMessages((prev) => [
       ...prev,
       { id: botMessageId, sender: Sender.Bot, text: '' },
@@ -73,13 +78,16 @@ const ChatInterface: React.FC = () => {
 
     try {
       // Gemini API로 메시지 전송 (스트림 방식)
-      const stream = await sendMessageStream(chat, trimmedText);
+      // GenerateContentStreamResult 타입 사용으로 타입 안정성 강화
+      const result: GenerateContentStreamResult = await sendMessageStream(chat, trimmedText);
       let fullBotResponse = '';
 
       // 스트림 응답 처리
-      for await (const chunk of stream as any) { // 'as any'는 타입스크립트 에러를 임시 회피
-        if (chunk?.text) {
-          fullBotResponse += chunk.text;
+      for await (const chunk of result.stream) {
+        // chunk.text는 ContentPart.text 타입으로 추정되나, 안전하게 접근
+        const chunkText = chunk.text || '';
+        if (chunkText) {
+          fullBotResponse += chunkText;
           // 스트림 중간중간 메시지 업데이트
           setMessages((prev) =>
             prev.map((msg) =>
@@ -88,6 +96,16 @@ const ChatInterface: React.FC = () => {
           );
         }
       }
+
+      // 스트림이 완료된 후, 응답이 비어있다면 "응답 없음" 처리
+      if (fullBotResponse === '') {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId ? { ...msg, text: "죄송합니다, 응답을 받지 못했습니다." } : msg
+          )
+        );
+      }
+
     } catch (e: unknown) {
       console.error("메시지 전송 중 오류 발생:", e);
       const errorMessage =
@@ -102,26 +120,25 @@ const ChatInterface: React.FC = () => {
     } finally {
       setIsLoading(false); // 로딩 상태 해제
     }
-  }, [chat, isLoading]); // chat 또는 isLoading 상태 변경 시 handleSendMessage 재생성
+  }, [chat, isLoading]);
 
-  // 💡 MessageInput 컴포넌트에 전달될 placeholder 텍스트 설정
+  // MessageInput 컴포넌트에 전달될 placeholder 텍스트 설정
   const messageInputPlaceholder = useMemo(() => {
     if (!chat) return '챗봇을 초기화 중입니다...';
     if (isLoading) return '응답을 기다리는 중...';
     if (error) return '오류가 발생하여 메시지를 보낼 수 없습니다.';
     return '한류에 대해 궁금한 점을 물어보세요...';
-  }, [chat, isLoading, error]); // chat, isLoading, error 상태에 따라 placeholder 변경
+  }, [chat, isLoading, error]);
 
   return (
     <div className="flex flex-col flex-grow h-full overflow-hidden">
       {/* 메시지 리스트 컴포넌트 */}
-      {/* 💡 MessageList에 isLoading을 전달하여 스크롤 로직에 활용하도록 합니다. */}
+      {/* MessageList에 isLoading을 전달하여 스크롤 로직에 활용하도록 합니다. */}
       <MessageList messages={messages} isLoading={isLoading} />
 
       {/* 로딩 인디케이터 (isLoading 상태일 때만 표시) */}
-      {/* 💡 LoadingIndicator를 ChatInterface에서만 단일하게 렌더링하여 중복 문제 해결 */}
       {isLoading && (
-        <div className="flex justify-center py-2"> {/* 약간의 세로 패딩으로 로딩 표시의 자연스러운 배치 */}
+        <div className="flex justify-center py-2">
           <LoadingIndicator />
         </div>
       )}
