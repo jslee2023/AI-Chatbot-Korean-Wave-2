@@ -95,20 +95,22 @@ const ChatInterface: React.FC = () => {
   }, [chat, isLoading]);
 
   return (
+    // 💡 이 div의 높이가 flex-col에 맞춰 정확히 고정되어야 합니다.
+    // h-full과 overflow-hidden은 이미 잘 되어 있습니다.
     <div className="flex flex-col flex-grow h-full overflow-hidden">
       {/* 메시지 리스트 */}
-      {/* 💡 MessageList에 isLoading prop을 전달하여 스크롤 로직이 isLoading 변화에 반응하도록 합니다. */}
       <MessageList messages={messages} isLoading={isLoading} />
 
       {/* 로딩 인디케이터 */}
       {isLoading && (
-        // 💡 수정 지점: 'p-4' 클래스를 제거하여 로딩 시 배경의 변화를 없앱니다.
-        <div className="flex justify-center"> {/* 'p-4' 클래스 제거 */}
+        // 💡 py-2 패딩이 여전히 로딩 영역의 높이 변화에 기여합니다.
+        // 하지만 이게 화면 절반의 하얀색을 만드는 주범은 아닐 가능성이 높습니다.
+        <div className="flex justify-center py-2"> 
           <LoadingIndicator />
         </div>
       )}
 
-      {/* 에러 배너 */}
+      {/* 에러 배너 (현재 코드에서는 문제가 없어 보입니다.) */}
       {error && (
         <div className="px-4 py-2 text-red-400 text-sm bg-red-900/50" role="alert" aria-live="polite">
           <p>
@@ -117,7 +119,7 @@ const ChatInterface: React.FC = () => {
         </div>
       )}
 
-      {/* 입력창 */}
+      {/* 입력창 (현재 코드에서는 문제가 없어 보입니다.) */}
       <MessageInput
         onSendMessage={handleSendMessage}
         disabled={isLoading || !chat}
