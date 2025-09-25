@@ -20,7 +20,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
     <div
       role="log"
       aria-live="polite"
-      className="
+      className="flex flex-col
         flex-1 overflow-y-auto p-4 space-y-3
         bg-white dark:bg-gray-900
         shadow-inner
