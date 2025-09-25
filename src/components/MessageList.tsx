@@ -36,10 +36,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
       {messages.map((m) => (
         <Message key={m.id} message={m} />
       ))}
-      // {isLoading && (
-      // <div className="flex justify-center py-2"> {/* py-2는 그대로 둡시다, LoadingIndicator 주위에 약간의 패딩이 있으면 더 자연스러울 수 있습니다. */}
-       // <LoadingIndicator />
-       // </div>
+       {isLoading && (
+         <div className="flex justify-center py-2"> {/* py-2는 그대로 둡시다, LoadingIndicator 주위에 약간의 패딩이 있으면 더 자연스러울 수 있습니다. */}
+           <LoadingIndicator />
+         </div>
       )}
       <div ref={messagesEndRef} />
     </div>
