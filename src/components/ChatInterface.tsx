@@ -65,7 +65,7 @@ const ChatInterface: React.FC = () => {
     setError(null); // 에러 상태 초기화
 
     // 봇 응답을 위한 빈 메시지 추가 (스트림으로 채워질 예정)
-    const botMessageId = (Date.now() + 1).toString(); // 사용자 메시지보다 나중에 추가될 ID
+    const botMessageId = `msg-${messageIdCounter++}`; // 사용자 메시지보다 나중에 추가될 ID
     setMessages((prev) => [
       ...prev,
       { id: botMessageId, sender: Sender.Bot, text: '' },
