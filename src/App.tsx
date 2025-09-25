@@ -15,8 +15,8 @@ const App: React.FC = () => {
       <div
         className="
           w-full max-w-3xl h-[90vh]                   // 너비, 최대 너비, 높이 (원래와 동일)
-          bg-gray-900 bg-opacity-80 backdrop-blur-md  // 👈 배경색을 더 어둡게, 불투명도를 높이고 블러 강도 조정 (수정 부분)
-          rounded-xl shadow-lg                       // 👈 모서리 둥글기 'rounded-2xl' -> 'rounded-xl', 그림자 'shadow-2xl' -> 'shadow-lg' (수정 부분)
+          bg-gray-800 bg-opacity-50 backdrop-blur-lg  // 👈 배경색을 더 어둡게, 불투명도를 높이고 블러 강도 조정 (수정 부분)
+          rounded-2xl shadow-2xl                       // 👈 모서리 둥글기 'rounded-2xl' -> 'rounded-xl', 그림자 'shadow-2xl' -> 'shadow-lg' (수정 부분)
           flex flex-col
           border border-gray-600                     // 👈 테두리 색상 'border-gray-700' -> 'border-gray-600' (수정 부분)
         "
