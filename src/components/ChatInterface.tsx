@@ -25,7 +25,6 @@ const ChatInterface: React.FC = () => {
         },
       ]);
     } else {
-      // FIX: Update error message to reflect the correct environment variable name.
       const apiKeyError = "Google Gemini API 키가 설정되지 않았습니다. 이 앱을 사용하려면 관리자가 `API_KEY` 환경 변수를 설정해야 합니다.";
       setMessages([
         {
@@ -50,7 +49,6 @@ const ChatInterface: React.FC = () => {
     setError(null);
     
     const botMessageId = (Date.now() + 1).toString();
-    // Add a placeholder for the bot's response
     setMessages((prev) => [...prev, { id: botMessageId, sender: Sender.Bot, text: '' }]);
 
     try {
@@ -80,13 +78,21 @@ const ChatInterface: React.FC = () => {
   return (
     <div className="flex flex-col flex-grow h-full overflow-hidden">
       <MessageList messages={messages} />
-       {isLoading && <LoadingIndicator />}
+        {isLoading && <LoadingIndicator />}
       {error && (
         <div className="px-4 py-2 text-red-400 text-sm bg-red-900/50">
           <p><strong>오류:</strong> {error}</p>
         </div>
       )}
-      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading || !chat} />
+      {/* 수정된 부분: 
+        - 'disabled' 속성을 'isSending'으로 변경했습니다.
+        - 'placeholder' 속성을 추가했습니다.
+      */}
+      <MessageInput
+        onSendMessage={handleSendMessage}
+        isSending={isLoading || !chat}
+        placeholder="메시지를 입력하세요..."
+      />
     </div>
   );
 };
