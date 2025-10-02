@@ -1,90 +1,79 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import type { Chat } from '@google/genai';
+// src/components/ChatInterface.tsx (예시 – 실제 코드에 맞게 통합)
+import React, { useState, useEffect } from 'react';
+import { MessageList } from './MessageList';
+import { MessageInput } from './MessageInput';
+import { Sender, ChatMessage } from '../types';
+import { createLoadingMessage } from './Message'; // 헬퍼 import
 import { initChat, sendMessageStream } from '../services/geminiService';
-import type { ChatMessage } from '../types';
-import { Sender } from '../types';
-import MessageList from './MessageList';
-import MessageInput from './MessageInput';
-import LoadingIndicator from './LoadingIndicator';
 
 const ChatInterface: React.FC = () => {
-  const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
+  // 로딩 상태 변경 시 messages 업데이트 (useEffect로 동기화)
   useEffect(() => {
-    const chatInstance = initChat();
-    if (chatInstance) {
-      setChat(chatInstance);
-      setMessages([
-        {
-          id: 'init',
-          sender: Sender.Bot,
-          text: '안녕하세요! 저는 한류 마스터 챗봇입니다. K-pop, 드라마, 영화 등 한국 문화에 대해 무엇이든 물어보세요!',
-        },
-      ]);
+    if (isLoading) {
+      // 로딩 시작: messages 끝에 더미 로딩 메시지 추가
+      setMessages(prev => [...prev, createLoadingMessage()]);
     } else {
-      const apiKeyError = "Google Gemini API 키가 설정되지 않았습니다. 이 앱을 사용하려면 관리자가 `API_KEY` 환경 변수를 설정해야 합니다.";
-      setMessages([
-        {
-          id: 'init-error',
-          sender: Sender.Bot,
-          text: `**초기화 오류:**\n${apiKeyError}`,
-        }
-      ]);
+      // 로딩 종료: 마지막 로딩 메시지 제거 (ID로 필터링)
+      setMessages(prev => prev.filter(m => !m.id.startsWith('loading-')));
     }
-  }, []);
+  }, [isLoading]);
 
-  const handleSendMessage = useCallback(async (text: string) => {
-    if (!chat || isLoading) return;
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
 
+    // 사용자 메시지 추가
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: Sender.User,
-      text,
+      text: text.trim(),
     };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-    setError(null);
-    
-    const botMessageId = (Date.now() + 1).toString();
-    setMessages((prev) => [...prev, { id: botMessageId, sender: Sender.Bot, text: '' }]);
+    setMessages(prev => [...prev, userMessage]);
+
+    setIsLoading(true); // 로딩 시작 (useEffect 트리거)
 
     try {
-      const stream = await sendMessageStream(chat, text);
-      let fullText = '';
-      for await (const chunk of stream) {
-        fullText += chunk.text;
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === botMessageId ? { ...msg, text: fullText } : msg
-          )
-        );
+      const chat = initChat();
+      if (chat) {
+        const stream = await sendMessageStream(chat, text);
+        // 스트림 처리 (실제 구현: stream 데이터를 누적해 text 빌드)
+        let responseText = ''; // 예시: 스트림에서 텍스트 추출
+        for await (const chunk of stream) {
+          responseText += chunk.text(); // 실제 파싱 로직
+        }
+
+        // 로딩 종료 + AI 응답 추가
+        setIsLoading(false); // useEffect로 로딩 메시지 제거
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: Sender.Bot,
+          text: responseText,
+        };
+        setMessages(prev => [...prev.slice(0, -1), aiMessage]); // 로딩 제거 후 AI 추가
       }
-    } catch (e: any) {
-      const errorMessage = e.message || 'An unexpected error occurred.';
-      setError(errorMessage);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === botMessageId ? { ...msg, text: `오류: ${errorMessage}` } : msg
-        )
-      );
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error:', error);
+      setIsLoading(false); // 에러 시 로딩 종료
+      // 에러 메시지 추가 (옵션)
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        sender: Sender.Bot,
+        text: '죄송합니다. 응답을 생성할 수 없습니다. 다시 시도해주세요.',
+      };
+      setMessages(prev => [...prev.slice(0, -1), errorMessage]);
     }
-  }, [chat, isLoading]);
+  };
 
   return (
-    <div className="flex flex-col flex-grow h-full overflow-hidden">
-      <MessageList messages={messages} />
-        {isLoading && <LoadingIndicator />}
-      {error && (
-        <div className="px-4 py-2 text-red-400 text-sm bg-red-900/50">
-          <p><strong>오류:</strong> {error}</p>
-        </div>
-      )}
-      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading || !chat} />
+    <div className="flex flex-col h-full">
+      <MessageList messages={messages} isLoading={isLoading} /> {/* isLoading으로 스크롤 트리거 */}
+      <MessageInput 
+        onSendMessage={handleSendMessage} 
+        disabled={isLoading} 
+        isSending={isLoading} 
+      />
     </div>
   );
 };
