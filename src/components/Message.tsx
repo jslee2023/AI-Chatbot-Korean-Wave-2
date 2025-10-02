@@ -1,19 +1,53 @@
-// src/components/Message.tsx (기존 코드에 아래 부분만 조정 – 전체는 이전 버전 유지)
-import type { ChatMessage, Sender } from '../types'; // Sender import 확인
+// src/components/Message.tsx
+import React from 'react'; // React import 추가
+import type { ChatMessage } from '../types';
+import { Sender } from '../types'; // type 제거: value로 사용
+import { BotIcon, UserIcon } from './IconComponents'; // icons import 추가
 
-// 로딩용 더미 메시지 생성 헬퍼 (상위에서 사용)
+interface MessageProps { // interface 정의
+  message: ChatMessage;
+}
+
+// 로딩용 더미 메시지 생성 헬퍼 (export)
 export const createLoadingMessage = (): ChatMessage => ({
-  id: `loading-${Date.now()}`, // 고유 ID
-  sender: Sender.Bot,          // 봇으로 설정
-  text: '',                    // 빈 텍스트 (로딩 시 DancingDots 표시)
+  id: `loading-${Date.now()}`,
+  sender: Sender.Bot,
+  text: '', // 빈 텍스트 = 로딩
 });
 
-// Message 컴포넌트 내부 (기존 if (loading) 블록을 message.text === '' && sender === Sender.Bot으로 변경)
-const Message: React.FC<MessageProps> = React.memo(({ message }) => {
+// 간단한 Markdown-like 텍스트 포맷터
+const formatText = (text: string) => {
+  const bolded = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const newlined = bolded.replace(/\n/g, '<br />');
+  return { __html: newlined };
+};
+
+// DancingDots 컴포넌트 (내부)
+const DancingDots: React.FC<{ count?: number; dotClassName?: string; gapClassName?: string }> = React.memo(({
+  count = 3,
+  dotClassName = 'w-2 h-2 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse',
+  gapClassName = 'space-x-1.5',
+}) => {
+  const reducedMotion = 'motion-reduce:animate-none';
+  return (
+    <div className={`flex items-center ${gapClassName}`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <span
+          key={i}
+          className={`${dotClassName} ${reducedMotion}`}
+          style={{ animationDelay: `${i * 0.2}s` }}
+          aria-hidden="true"
+        />
+      ))}
+    </div>
+  );
+});
+
+const MessageComponent: React.FC<MessageProps> = React.memo(({ message }) => { // 이름 변경: Message conflict 피함
   if (!message) return null;
 
   const isUser = message.sender === Sender.User;
-  const isBotLoading = message.sender === Sender.Bot && message.text === ''; // 빈 텍스트 봇 메시지 = 로딩
+  const isBotLoading = message.sender === Sender.Bot && message.text === ''; // 빈 봇 = 로딩
 
   if (isBotLoading) {
     // 로딩 시: 빈 봇 메시지 + DancingDots
@@ -32,7 +66,6 @@ const Message: React.FC<MessageProps> = React.memo(({ message }) => {
     );
   }
 
-  // 기존 일반 메시지 렌더링 (isUser 등) – 변경 없음
   const messageClasses = isUser
     ? 'bg-blue-500/80 self-end rounded-br-none'
     : 'bg-gray-300/90 dark:bg-gray-700/90 self-start rounded-tl-none';
@@ -70,3 +103,7 @@ const Message: React.FC<MessageProps> = React.memo(({ message }) => {
     </div>
   );
 });
+
+MessageComponent.displayName = 'Message';
+
+export default MessageComponent; // default export
