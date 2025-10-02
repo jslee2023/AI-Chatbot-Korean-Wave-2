@@ -84,15 +84,7 @@ const ChatInterface: React.FC = () => {
           <p><strong>오류:</strong> {error}</p>
         </div>
       )}
-      {/* 수정된 부분: 
-        - 'disabled' 속성을 'isSending'으로 변경했습니다.
-        - 'placeholder' 속성을 추가했습니다.
-      */}
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        isSending={isLoading || !chat}
-        placeholder="메시지를 입력하세요..."
-      />
+      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading || !chat} />
     </div>
   );
 };
