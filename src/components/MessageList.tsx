@@ -1,5 +1,5 @@
 // src/components/MessageList.tsx
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react'; // useCallback 추가
 import type { ChatMessage } from '../types';
 import Message from './Message';
 
