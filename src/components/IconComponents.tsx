@@ -55,3 +55,27 @@ export const UserIcon: React.FC<IconProps> = React.memo(({
     <circle cx="12" cy="7" r="4"/>
   </svg>
 ));
+
+// 전송 아이콘 (메시지 입력 버튼에 사용)
+export const SendIcon: React.FC<IconProps> = React.memo(({ 
+  size = 20, 
+  className = '', 
+  ariaHidden = false 
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    width={size}
+    height={size}
+    className={`fill-current ${className}`}
+    aria-hidden={ariaHidden}
+  >
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22,2 15,22 11,13 2,9 22,2" />
+  </svg>
+));
