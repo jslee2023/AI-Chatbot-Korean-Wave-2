@@ -62,8 +62,8 @@ const Message: React.FC<MessageProps> = React.memo(({ message, loading = false }
   if (!message) return null; // 로딩 아닌데 메시지 없으면 아무것도 안 보임
 
   const messageClasses = isUser
-    ? 'bg-blue-500/80 self-end rounded-br-none' // 반투명 + 사용자 스타일
-    : 'bg-gray-300/90 dark:bg-gray-700/90 self-start rounded-tl-none'; // 더 진한 배경
+    ? 'bg-blue-600/80 self-end rounded-br-none' // 반투명 + 사용자 스타일
+    : 'bg-gray-700/90 dark:bg-gray-700/90 self-start rounded-tl-none'; // 더 진한 배경
 
   const containerClasses = `flex items-end ${isUser ? 'justify-end' : 'justify-start'} gap-2 mb-3`;
 
