@@ -17,36 +17,36 @@ const Header: React.FC<HeaderProps> = React.memo(({
       role="banner"
       className={[
         'w-full',
-        sticky ? 'sticky top-0 z-40' : '', // 현재 구조에서는 sticky가 큰 의미가 없을 수 있습니다.
-        'bg-gray-500 dark:bg-gray-950',    // 배경색 변경 (불투명)
-        'rounded-t-xl',                    // 상단 모서리 둥글게 (App.tsx와 일관성)
-        'border-b border-gray-600 dark:border-gray-700',
-        'shadow-md'
-      ].join(' ')} // 배열을 join(' ')으로 연결하여 Tailwind 클래스 문자열 생성
+        sticky ? 'sticky top-0 z-40' : '',
+        'bg-gray-800/50 backdrop-blur-sm', // 반투명 배경 + 블러 효과 (새 코드 영감)
+        'rounded-t-2xl',                   // 더 둥근 모서리 (새 코드)
+        'border-b border-gray-700 dark:border-gray-800',
+        'shadow-lg'                        // 강한 그림자 (새 코드)
+      ].join(' ')}
     >
       <div
         className="mx-auto max-w-6xl px-4 sm:px-6"
         aria-label="사이트 헤더"
       >
-        <div className="h-14 sm:h-16 flex items-center justify-center">
-          <div className="flex items-center gap-3">
+        <div className="h-16 flex items-center justify-center"> {/* 고정 높이, 새 코드처럼 64px */}
+          <div className="flex items-center gap-3"> {/* gap-3 유지, space-x-3 대신 */}
             {/* 로고 아이콘 */}
             <div
               aria-hidden="true"
               className={[
-                'w-3.5 h-3.5 rounded-full',
-                'bg-gradient-to-r from-teal-200 to-cyan-300', // 아이콘 그라데이션 색상
+                'w-4 h-4 rounded-full',          // 크기 새 코드처럼 16px
+                'bg-gradient-to-r from-teal-200 via-pink-300 to-purple-500', // 그라데이션 섞음 (청록 + 핑크-퍼플)
                 logoPulse ? 'animate-pulse' : '',
-                'ring-2 ring-white/60 dark:ring-gray-900/60'
+                'ring-2 ring-white/60 dark:ring-gray-900/60' // 링 유지 (기존)
               ].join(' ')}
             />
             {/* 타이틀 텍스트 */}
             <h1
               className={[
-                'text-lg sm:text-xl font-bold',
+                'text-xl font-bold',             // 고정 20px (새 코드), 반응형 생략으로 간결
                 'text-transparent bg-clip-text',
-                'bg-gradient-to-r from-cyan-200 to-blue-300', // 텍스트 그라데이션 색상
-                'contrast-more:text-blue-500 contrast-more:bg-none' // 고대비 모드
+                'bg-gradient-to-r from-cyan-200 via-purple-400 to-pink-500', // 그라데이션 섞음 (청색 + 퍼플-핑크)
+                'contrast-more:text-purple-500 contrast-more:bg-none' // 고대비, 색상 조정
               ].join(' ')}
             >
               {title}
