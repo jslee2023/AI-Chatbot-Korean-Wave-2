@@ -43,9 +43,7 @@ export const initChat = (): Chat | null => {
       model: 'gemini-2.5-flash', // 최신 모델 사용
       config: {
         systemInstruction: SYSTEM_INSTRUCTION, // 시스템 지시어로 페르소나 설정
-        generationConfig: {
-          maxOutputTokens: 200, // 응답 길이 제한
-        },
+        // generationConfig 제거 (타입 불일치 방지; 필요 시 sendMessageStream에서 동적 적용)
       },
     });
   } catch (error) {
