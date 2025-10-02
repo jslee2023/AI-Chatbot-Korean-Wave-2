@@ -19,8 +19,8 @@ const Message: React.FC<MessageProps> = React.memo(({ message }) => {
   const isUser = message.sender === Sender.User;
 
   const messageClasses = isUser
-    ? 'bg-blue-500/80 self-end rounded-br-none' // 반투명 + 사용자 스타일
-    : 'bg-gray-200/80 dark:bg-gray-700/80 self-start rounded-tl-none'; // 다크 모드 + 봇 스타일
+    ? 'bg-blue-600/80 self-end rounded-br-none' // 반투명 + 사용자 스타일
+    : 'bg-gray-700/80 dark:bg-gray-700/80 self-start rounded-tl-none'; // 다크 모드 + 봇 스타일
 
   const containerClasses = `flex items-end ${isUser ? 'justify-end' : 'justify-start'} gap-2 mb-3`;
 
