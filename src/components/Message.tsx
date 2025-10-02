@@ -8,29 +8,43 @@ interface MessageProps {
   message: ChatMessage;
 }
 
+// 간단한 Markdown-like 텍스트 포맷터 (볼드와 줄바꿈 지원)
+const formatText = (text: string) => {
+  const bolded = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const newlined = bolded.replace(/\n/g, '<br />');
+  return { __html: newlined };
+};
+
 const Message: React.FC<MessageProps> = React.memo(({ message }) => {
   const isUser = message.sender === Sender.User;
 
+  const messageClasses = isUser
+    ? 'bg-blue-500/80 self-end rounded-br-none' // 반투명 + 사용자 스타일
+    : 'bg-gray-200/80 dark:bg-gray-700/80 self-start rounded-tl-none'; // 다크 모드 + 봇 스타일
+
+  const containerClasses = `flex items-end ${isUser ? 'justify-end' : 'justify-start'} gap-2 mb-3`;
+
+  const textContent = (
+    <div
+      className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap" // prose 가독성 + 줄바꿈 보존
+      dangerouslySetInnerHTML={formatText(message.text)}
+    />
+  );
+
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
-      {!isUser && ( // 봇 메시지일 때만 아바타 표시
+    <div className={containerClasses}>
+      {!isUser && (
         <div
-          className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mr-2 shadow-md"
+          className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md mr-2"
           aria-hidden="true"
         >
           <BotIcon size={18} ariaHidden />
         </div>
       )}
-      <div
-        className={`flex flex-col max-w-[80%] px-4 py-2 rounded-xl shadow-md ${
-          isUser
-            ? 'bg-blue-500 text-white rounded-br-none' // 사용자 메시지 스타일
-            : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-none' // 봇 메시지 스타일
-        }`}
-      >
-        <p className="whitespace-pre-wrap">{message.text}</p> {/* 텍스트 줄바꿈 유지 */}
+      <div className={`max-w-[80%] md:max-w-lg p-3 rounded-xl shadow-md ${messageClasses}`}>
+        {textContent}
       </div>
-      {isUser && ( // 사용자 메시지일 때만 아바타 표시
+      {isUser && (
         <div
           className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center ml-2 shadow-md"
           aria-hidden="true"
