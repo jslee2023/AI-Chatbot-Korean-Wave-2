@@ -1,15 +1,18 @@
 // src/components/IconComponents.tsx
-
 import React from 'react';
 
 interface IconProps {
   size?: number | string;
   className?: string;
-  ariaHidden?: boolean; // 스크린리더를 위한 aria-hidden 속성
+  ariaHidden?: boolean; // 스크린 리더를 위한 aria-hidden 속성
 }
 
 // 봇 아이콘 (예: 로딩 인디케이터나 헤더 아바타에 사용)
-export const BotIcon: React.FC<IconProps> = ({ size = 20, className = '', ariaHidden = false }) => (
+export const BotIcon: React.FC<IconProps> = React.memo(({ 
+  size = 20, 
+  className = '', 
+  ariaHidden = false 
+}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -27,10 +30,14 @@ export const BotIcon: React.FC<IconProps> = ({ size = 20, className = '', ariaHi
     <path d="M7 16l-3.268 3.268a2 2 0 1 0 2.828 2.828L12 16h-5Z"/>
     <path d="M17 16l3.268 3.268a2 2 0 1 1-2.828 2.828L12 16h5Z"/>
   </svg>
-);
+));
 
 // 사용자 아이콘 (예: 사용자 메시지 옆에 표시)
-export const UserIcon: React.FC<IconProps> = ({ size = 20, className = '', ariaHidden = false }) => (
+export const UserIcon: React.FC<IconProps> = React.memo(({ 
+  size = 20, 
+  className = '', 
+  ariaHidden = false 
+}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -47,4 +54,4 @@ export const UserIcon: React.FC<IconProps> = ({ size = 20, className = '', ariaH
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
   </svg>
-);
+));
