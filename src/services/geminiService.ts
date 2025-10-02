@@ -1,54 +1,69 @@
 // src/services/geminiService.ts
+import { GoogleGenAI, Chat } from "@google/genai";
 
-import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
+// 시스템 지시어 (페르소나 설정) - 한류 전문 챗봇
+const SYSTEM_INSTRUCTION = `You are 'Hallyu Master', a friendly and enthusiastic chatbot expert on all things related to the Korean Wave (Hallyu). You are fluent in many languages. Your knowledge covers K-pop, K-dramas, Korean movies, Korean food, travel in Korea, the Korean language (Hangeul), Korean culture, and Korean history. You even know about niche fan topics like 'K-pop demon hunters'. Engage users in a fun, informative, and respectful manner. Always provide helpful and accurate information. Format your responses using markdown for better readability.`;
 
-// 환경 변수에서 Gemini API 키를 가져옵니다.
-// Vercel 배포 시에는 'GOOGLE_GEMINI_API_KEY'로 환경 변수를 설정해야 합니다.
-const API_KEY_ENV = import.meta.env.VITE_GOOGLE_GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
+let ai: GoogleGenAI | null = null;
+let apiKeyIsMissing = false;
 
-// Gemini 모델 초기화
-let genAI: GoogleGenerativeAI | null = null;
-let model: any = null; // 제미니 모델을 타입으로 지정하기 어려워 'any' 사용
+const getAiClient = (): GoogleGenAI | null => {
+  // 이미 키 누락 확인 시 재체크 방지
+  if (apiKeyIsMissing) return null;
+  // 이미 초기화된 클라이언트 반환 (싱글톤)
+  if (ai) return ai;
 
-// 챗 세션을 초기화하는 함수
-export const initChat = (): ChatSession | null => {
-  if (!API_KEY_ENV) {
-    console.error(`Error: Google Gemini API Key is not set. Please set the '${API_KEY_ENV}' environment variable.`);
+  // Vite config을 통해 process.env.API_KEY 접근 (TS 에러 해결)
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    console.error("API_KEY environment variable is not set.");
+    apiKeyIsMissing = true;
     return null;
   }
 
-  if (!genAI) {
-    genAI = new GoogleGenerativeAI(API_KEY_ENV);
+  try {
+    // API 가이드라인에 따라 { apiKey } 객체로 전달
+    ai = new GoogleGenAI({ apiKey });
+    return ai;
+  } catch (error) {
+    console.error("Failed to initialize GoogleGenAI:", error);
+    apiKeyIsMissing = true;
+    return null;
   }
-
-  if (!model) {
-    // 텍스트와 이미지 모두 처리 가능한 'gemini-pro-vision' 모델 사용 (필요시 'gemini-pro'로 변경)
-    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-  }
-
-  // 새로운 챗 세션을 시작합니다.
-  const chat = model.startChat({
-    history: [
-      // 초기 대화 기록 (봇의 페르소나 설정)
-      {
-        role: 'user',
-        parts: '너는 한류 전문 챗봇이야. 한국의 K-pop, 드라마, 영화, 음식 등 모든 문화에 대해 전문적인 지식을 가지고 사람들과 소통해 줘. 질문에 친절하고 상세하게 답변해 줘.',
-      },
-      {
-        role: 'model',
-        parts: '안녕하세요! 저는 한류 마스터 챗봇입니다. K-pop, 드라마, 영화 등 한국 문화에 대해 무엇이든 물어보세요!',
-      },
-    ],
-    generationConfig: {
-      maxOutputTokens: 200, // 최대 응답 토큰 길이 (필요시 조정)
-    },
-  });
-
-  return chat;
 };
 
-// 스트림 방식으로 메시지를 전송하고 응답을 받는 함수
-export const sendMessageStream = async (chat: ChatSession, message: string) => {
-  const result = await chat.sendMessageStream(message);
-  return result.stream;
+export const initChat = (): Chat | null => {
+  const genAI = getAiClient();
+  if (!genAI) {
+    return null;
+  }
+  try {
+    return genAI.chats.create({
+      model: 'gemini-2.5-flash', // 최신 모델 사용
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION, // 시스템 지시어로 페르소나 설정
+        generationConfig: {
+          maxOutputTokens: 200, // 응답 길이 제한
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Failed to create chat:", error);
+    return null;
+  }
+};
+
+export const sendMessageStream = async (chat: Chat, message: string) => {
+  try {
+    // API 가이드라인에 따라 { message } 객체 전달
+    const result = await chat.sendMessageStream({ message });
+    return result;
+  } catch (error) {
+    console.error("Error sending message to Gemini:", error);
+    if (apiKeyIsMissing) {
+      throw new Error("API 키가 설정되지 않았습니다. 관리자에게 문의하여 `API_KEY` 환경 변수를 확인하세요.");
+    }
+    throw new Error("AI로부터 응답을 받지 못했습니다. API 키와 네트워크 연결을 확인하세요.");
+  }
 };
