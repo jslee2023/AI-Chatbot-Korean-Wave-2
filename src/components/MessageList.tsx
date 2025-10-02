@@ -25,7 +25,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({ messages, isLoadin
     <div
       role="log"
       aria-live="polite"
-      className="flex flex-col flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-gray-900 shadow-inner max-h-[70vh] min-h-0"
+      className="flex flex-col flex-1 overflow-y-auto p-4 space-y-4 bg-blue-100 dark:bg-gray-900 shadow-inner max-h-[70vh] min-h-0"
     >
       {messages.map((message) => (
         <Message key={message.id} message={message} />
