@@ -68,7 +68,7 @@ const MessageComponent: React.FC<MessageProps> = React.memo(({ message }) => { /
 
   const messageClasses = isUser
     ? 'bg-blue-500/80 self-end rounded-br-none'
-    : 'bg-yellow-500/10 dark:bg-yellow-900/10 self-start rounded-tl-none';
+    : 'bg-yellow-100/10 dark:bg-yellow-100/10 self-start rounded-tl-none';
 
   const containerClasses = `flex items-end ${isUser ? 'justify-end' : 'justify-start'} gap-2 mb-3`;
 
