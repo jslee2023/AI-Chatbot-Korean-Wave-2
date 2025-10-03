@@ -74,7 +74,7 @@ const MessageComponent: React.FC<MessageProps> = React.memo(({ message }) => { /
 
   const textContent = (
     <div
-      className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap"
+      className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap text-blue-600 dark:text-blue-300"
       dangerouslySetInnerHTML={formatText(message.text)}
     />
   );
