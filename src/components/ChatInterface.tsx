@@ -1,25 +1,23 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect } from 'react';
-import MessageList from './MessageList'; // default import
-import MessageInput from './MessageInput'; // default import
+import MessageList from './MessageList';
+import MessageInput from './MessageInput';
 import { Sender, ChatMessage } from '../types';
-import { createLoadingMessage } from './Message'; // named import (사용됨)
-import { Chat } from '@google/genai'; // Chat 타입 import (필요 시)
+import { createLoadingMessage } from './Message'; // named import (useEffect에서 사용됨)
 import { initChat, sendMessageStream } from '../services/geminiService';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [chat, setChat] = useState<Chat | null>(null); // chat 세션 상태 추가 (setChat 정의)
+  const [chat, setChat] = useState<any>(null); // chat 세션 상태 추가 (setChat 정의, 타입 any로 간단히)
 
-  // 로딩 상태 변경 시 messages 업데이트
+  // 로딩 상태 변경 시 messages 업데이트 (createLoadingMessage 사용)
   useEffect(() => {
     if (isLoading) {
-      // 로딩 시작: messages 끝에 더미 로딩 메시지 추가 (사용됨)
-      setMessages(prev => [...prev, createLoadingMessage()]);
+      const loadingMsg = createLoadingMessage(); // 명확히 호출 (dead code 해결)
+      setMessages(prev => [...prev, loadingMsg]);
     } else {
-      // 로딩 종료: 마지막 로딩 메시지 제거
-      setMessages(prev => prev.filter(m => !m.id.startsWith('loading-')));
+      setMessages(prev => prev.filter(m => !m.id.startsWith('loading-'))); // 로딩 제거
     }
   }, [isLoading]);
 
@@ -41,15 +39,15 @@ const ChatInterface: React.FC = () => {
       if (!currentChat) {
         currentChat = initChat();
         if (!currentChat) throw new Error('Chat initialization failed');
-        setChat(currentChat); // setChat 사용
+        setChat(currentChat); // setChat 사용 (정의됨)
       }
 
       const stream = await sendMessageStream(currentChat, text);
-      let responseText = ''; // 스트림 누적
-      // 스트림 처리 (getter text 사용)
+      let responseText = '';
+      // 스트림 처리
       for await (const chunk of stream) {
-        if (chunk.text) {
-          responseText += chunk.text; // () 제거: getter
+        if (chunk && chunk.text) {
+          responseText += chunk.text; // getter 사용
         }
       }
 
@@ -60,7 +58,10 @@ const ChatInterface: React.FC = () => {
         sender: Sender.Bot,
         text: responseText || '응답을 받지 못했습니다.',
       };
-      setMessages(prev => [...prev.slice(0, -1), aiMessage]); // 로딩 제거 후 추가
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1); // 로딩 제거
+        return [...withoutLoading, aiMessage];
+      });
     } catch (error) {
       console.error('Error:', error);
       setIsLoading(false);
@@ -69,7 +70,10 @@ const ChatInterface: React.FC = () => {
         sender: Sender.Bot,
         text: '죄송합니다. 응답을 생성할 수 없습니다. 다시 시도해주세요.',
       };
-      setMessages(prev => [...prev.slice(0, -1), errorMessage]);
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, errorMessage];
+      });
     }
   };
 
