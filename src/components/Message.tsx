@@ -25,7 +25,7 @@ const formatText = (text: string) => {
 // DancingDots 컴포넌트 (내부)
 const DancingDots: React.FC<{ count?: number; dotClassName?: string; gapClassName?: string }> = React.memo(({
   count = 3,
-  dotClassName = 'w-2 h-2 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse',
+  dotClassName = 'w-2 h-2 bg-white-300 dark:bg-white-700 rounded-full animate-pulse',
   gapClassName = 'space-x-1.5',
 }) => {
   const reducedMotion = 'motion-reduce:animate-none';
@@ -68,7 +68,7 @@ const MessageComponent: React.FC<MessageProps> = React.memo(({ message }) => { /
 
   const messageClasses = isUser
     ? 'bg-blue-500/80 self-end rounded-br-none'
-    : 'bg-yellow-300/90 dark:bg-yellow-700/90 self-start rounded-tl-none';
+    : 'bg-yellow-500/90 dark:bg-yellow-500/90 self-start rounded-tl-none';
 
   const containerClasses = `flex items-end ${isUser ? 'justify-end' : 'justify-start'} gap-2 mb-3`;
 
