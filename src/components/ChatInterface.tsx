@@ -83,7 +83,7 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-grow h-full overflow-hidden">
       <MessageList messages={messages} isLoading={isLoading} />
       <MessageInput 
         onSendMessage={handleSendMessage} 
