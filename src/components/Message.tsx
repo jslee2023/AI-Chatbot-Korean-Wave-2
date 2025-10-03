@@ -25,7 +25,7 @@ const formatText = (text: string) => {
 // DancingDots 컴포넌트 (내부)
 const DancingDots: React.FC<{ count?: number; dotClassName?: string; gapClassName?: string }> = React.memo(({
   count = 3,
-  dotClassName = 'w-2 h-2 bg-white-300 dark:bg-white-700 rounded-full animate-pulse',
+  dotClassName = 'w-2 h-2 bg-white-900 dark:bg-white-100 rounded-full animate-pulse',
   gapClassName = 'space-x-1.5',
 }) => {
   const reducedMotion = 'motion-reduce:animate-none';
