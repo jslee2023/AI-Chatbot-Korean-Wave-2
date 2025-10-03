@@ -12,15 +12,28 @@ const ChatInterface: React.FC = () => {
 
   // 로딩 상태 변경 시 messages 업데이트
   useEffect(() => {
-    if (isLoading) {
-      // 로딩 시작: messages 끝에 더미 로딩 메시지 추가
-      setMessages(prev => [...prev, createLoadingMessage()]);
+    const chatInstance = initChat();
+    if (chatInstance) {
+      setChat(chatInstance);
+      setMessages([
+        {
+          id: 'init',
+          sender: Sender.Bot,
+          text: '안녕하세요! 저는 한류 마스터 챗봇입니다. K-pop, 드라마, 영화 등 한국 문화에 대해 무엇이든 물어보세요!',
+        },
+      ]);
     } else {
-      // 로딩 종료: 마지막 로딩 메시지 제거
-      setMessages(prev => prev.filter(m => !m.id.startsWith('loading-')));
+      // FIX: Update error message to reflect the correct environment variable name.
+      const apiKeyError = "Google Gemini API 키가 설정되지 않았습니다. 이 앱을 사용하려면 관리자가 `API_KEY` 환경 변수를 설정해야 합니다.";
+      setMessages([
+        {
+          id: 'init-error',
+          sender: Sender.Bot,
+          text: `**초기화 오류:**\n${apiKeyError}`,
+        }
+      ]);
     }
-  }, [isLoading]);
-
+  }, []);
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
